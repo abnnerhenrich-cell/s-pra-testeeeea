@@ -10,6 +10,7 @@
   --bg:#070b14;
   --card:#0d1630;
   --btn:#2a5cff;
+  --muted: rgba(255,255,255,.75);
 }
 
 *{box-sizing:border-box;}
@@ -19,7 +20,7 @@ body{
   min-height:100vh;
   display:grid;
   place-items:center;
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background:
     radial-gradient(900px 600px at 20% 10%, #173166 0%, transparent 55%),
     radial-gradient(900px 600px at 90% 20%, #1d3fa0 0%, transparent 55%),
@@ -29,63 +30,116 @@ body{
 }
 
 .card{
-  width:min(500px, 100%);
-  background:rgba(13,22,48,.8);
+  width:min(520px, 100%);
+  background:rgba(13,22,48,.82);
+  border:1px solid rgba(255,255,255,.10);
   border-radius:20px;
-  padding:25px;
+  padding:24px;
   text-align:center;
   box-shadow:0 20px 60px rgba(0,0,0,.5);
 }
 
 h1{
   font-size:18px;
-  margin-bottom:15px;
+  margin:0 0 14px;
+  letter-spacing:.2px;
 }
 
 .painel{
   display:grid;
-  gap:15px;
-  margin-bottom:20px;
+  gap:12px;
+  margin:16px 0 18px;
 }
 
 .numero{
-  font-size:40px;
+  font-size:42px;
   font-weight:900;
-  letter-spacing:5px;
-  padding:15px;
-  border-radius:15px;
-  background:rgba(0,0,0,.3);
+  letter-spacing:6px;
+  padding:14px 16px;
+  border-radius:16px;
+  background:rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.10);
+  font-variant-numeric: tabular-nums;
+  user-select:none;
+
+  /* neon azul */
   text-shadow:
-    0 0 8px rgba(106,168,255,.9),
-    0 0 18px rgba(106,168,255,.6),
-    0 0 35px rgba(106,168,255,.4);
-  animation: brilho .7s ease;
+    0 0 8px rgba(106,168,255,.92),
+    0 0 18px rgba(106,168,255,.60),
+    0 0 38px rgba(106,168,255,.35);
+
+  position:relative;
+  overflow:hidden;
 }
 
-@keyframes brilho{
-  from{opacity:0; transform:scale(.8);}
-  to{opacity:1; transform:scale(1);}
+/* “reluzente” passando */
+.numero::before{
+  content:"";
+  position:absolute;
+  top:-40%;
+  left:-70%;
+  width:55%;
+  height:180%;
+  background: linear-gradient(120deg,
+    transparent 0%,
+    rgba(255,255,255,.10) 35%,
+    rgba(255,255,255,.38) 50%,
+    rgba(255,255,255,.10) 65%,
+    transparent 100%);
+  transform: rotate(15deg);
+  opacity:0;
+}
+
+.numero.anim::before{
+  opacity:1;
+  animation: shine .8s ease-out forwards;
+}
+
+@keyframes shine{
+  from{ left:-70%; }
+  to{ left:135%; }
+}
+
+.btns{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
 }
 
 button{
-  width:100%;
-  padding:14px;
+  padding:14px 14px;
   border:none;
   border-radius:14px;
   font-weight:900;
-  letter-spacing:1px;
-  background:linear-gradient(180deg,#3a74ff,var(--btn));
-  color:white;
+  letter-spacing:.8px;
   cursor:pointer;
-  font-size:15px;
+  color:white;
+  font-size:14px;
+  transition: transform .06s ease, filter .15s ease;
+}
+button:active{ transform: translateY(1px); }
+button:hover{ filter: brightness(1.06); }
+
+.primary{
+  background:linear-gradient(180deg,#3a74ff,var(--btn));
+  box-shadow:0 10px 25px rgba(42,92,255,.35);
 }
 
-button:active{transform:translateY(1px);}
+.secondary{
+  background: rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.12);
+}
+
+.status{
+  margin-top:12px;
+  font-size:12px;
+  color: var(--muted);
+  min-height: 18px;
+}
 </style>
 </head>
 
 <body>
-
 <div class="card">
   <h1>PALPITEIRO</h1>
 
@@ -97,28 +151,96 @@ button:active{transform:translateY(1px);}
     <div class="numero">0000</div>
   </div>
 
-  <button onclick="gerar()">GERAR</button>
+  <div class="btns">
+    <button class="primary" id="btnGerar">GERAR</button>
+    <button class="secondary" id="btnCopiar">COPIAR TODOS</button>
+  </div>
+
+  <div class="status" id="status">Sem resultados ainda.</div>
 </div>
 
 <script>
-function pad4(n){
-  return String(n).padStart(4,"0");
-}
+  const numerosEls = Array.from(document.querySelectorAll(".numero"));
+  const btnGerar = document.getElementById("btnGerar");
+  const btnCopiar = document.getElementById("btnCopiar");
+  const statusEl = document.getElementById("status");
 
-function gerar(){
-  const numeros = document.querySelectorAll(".numero");
+  // ========= SOM (WebAudio) =========
+  let audioCtx;
+  function beep(freq = 880, duration = 0.07, type = "sine", gainValue = 0.06){
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // garante que o áudio inicie após interação do usuário
+    if (audioCtx.state === "suspended") audioCtx.resume();
 
-  numeros.forEach(el=>{
-    const n = Math.floor(Math.random()*10000);
-    el.textContent = pad4(n);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
 
-    // reinicia animação
-    el.style.animation = "none";
-    void el.offsetWidth;
-    el.style.animation = "brilho .7s ease";
+    osc.type = type;
+    osc.frequency.value = freq;
+
+    gain.gain.value = 0;
+    gain.gain.linearRampToValueAtTime(gainValue, audioCtx.currentTime + 0.01);
+    gain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration + 0.02);
+  }
+
+  function somGerar(){
+    // uma mini “sequência” gostosa
+    beep(740, 0.06, "triangle", 0.05);
+    setTimeout(() => beep(990, 0.06, "triangle", 0.05), 70);
+    setTimeout(() => beep(1320, 0.07, "triangle", 0.05), 140);
+  }
+
+  // ========= UTIL =========
+  function pad4(n){ return String(n).padStart(4,"0"); }
+
+  function gerar5Unicos(){
+    const set = new Set();
+    while (set.size < 5){
+      set.add(Math.floor(Math.random() * 10000));
+    }
+    return Array.from(set).map(pad4);
+  }
+
+  function animar(el){
+    el.classList.remove("anim");
+    void el.offsetWidth; // reflow
+    el.classList.add("anim");
+  }
+
+  function pegarListaAtual(){
+    return numerosEls.map(el => el.textContent.trim());
+  }
+
+  // ========= AÇÕES =========
+  btnGerar.addEventListener("click", () => {
+    const lista = gerar5Unicos();
+
+    lista.forEach((num, i) => {
+      numerosEls[i].textContent = num;
+      animar(numerosEls[i]);
+    });
+
+    somGerar();
+    statusEl.textContent = "Gerado!";
   });
-}
-</script>
 
+  btnCopiar.addEventListener("click", async () => {
+    const lista = pegarListaAtual();
+    const texto = lista.join(" ");
+    try{
+      await navigator.clipboard.writeText(texto);
+      statusEl.textContent = "Copiado ✅ " + texto;
+      beep(1040, 0.06, "sine", 0.05);
+    }catch(e){
+      statusEl.textContent = "Não consegui copiar (seu navegador bloqueou). Se quiser, copie manualmente.";
+    }
+  });
+</script>
 </body>
 </html>
