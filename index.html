@@ -3,382 +3,150 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gerador de Palpite de Milhar</title>
+  <title>Gerador de Milhar</title>
   <style>
     :root{
-      --bg:#0b1220;
-      --card:#0f1b33;
-      --text:#e8eefc;
-      --muted:#9fb0d0;
-      --line:#23365f;
+      --bg:#070b14;
+      --card:#0d1630;
+      --text:#e9f0ff;
       --btn:#2a5cff;
-      --btn2:#1f2f52;
-      --ok:#3ddc97;
-      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --glow:#6aa8ff;
     }
-    *{box-sizing:border-box}
+
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 700px at 20% 10%, #173166 0%, transparent 55%),
-                  radial-gradient(900px 600px at 90% 20%, #1d3fa0 0%, transparent 55%),
-                  linear-gradient(180deg, var(--bg), #070b14);
-      color: var(--text);
       min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display:grid;
+      place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(900px 600px at 20% 10%, #173166 0%, transparent 55%),
+        radial-gradient(900px 600px at 90% 20%, #1d3fa0 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg), #050810);
+      color: var(--text);
       padding:24px;
     }
-    .wrap{
-      width:min(980px, 100%);
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:18px;
-    }
-    @media (max-width: 860px){
-      .wrap{grid-template-columns:1fr}
-    }
+
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.08);
+      width:min(520px, 100%);
+      background: rgba(13,22,48,.75);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:20px;
+      padding:22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      text-align:center;
+    }
+
+    h1{
+      margin:0 0 14px;
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:.3px;
+      opacity:.95;
+    }
+
+    .painel{
+      margin:14px 0 18px;
+      padding:24px 16px;
       border-radius:18px;
-      box-shadow: var(--shadow);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      font-variant-numeric: tabular-nums;
+      font-size:56px;
+      font-weight:900;
+      letter-spacing:6px;
+      user-select:none;
+
+      /* brilho */
+      text-shadow:
+        0 0 8px rgba(106,168,255,.85),
+        0 0 18px rgba(106,168,255,.55),
+        0 0 36px rgba(106,168,255,.35);
+      color: #eaf3ff;
+      position:relative;
       overflow:hidden;
     }
-    .card .head{
-      padding:18px 18px 12px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.12);
+
+    /* efeito reluzente passando */
+    .painel::before{
+      content:"";
+      position:absolute;
+      top:-40%;
+      left:-60%;
+      width:60%;
+      height:180%;
+      background: linear-gradient(120deg,
+        transparent 0%,
+        rgba(255,255,255,.08) 35%,
+        rgba(255,255,255,.35) 50%,
+        rgba(255,255,255,.08) 65%,
+        transparent 100%);
+      transform: rotate(15deg);
+      filter: blur(0.5px);
+      opacity:.0;
     }
-    .title{
-      margin:0;
-      font-size:18px;
-      letter-spacing:.2px;
+
+    .painel.anim::before{
+      opacity:1;
+      animation: shine .8s ease-out forwards;
     }
-    .sub{
-      margin:6px 0 0;
-      color: var(--muted);
-      font-size:13px;
-      line-height:1.35;
+
+    @keyframes shine{
+      from{ left:-70%; }
+      to{ left:120%; }
     }
-    .card .body{ padding:16px 18px 18px; }
-    label{
-      display:block;
-      font-size:12px;
-      color: var(--muted);
-      margin:10px 0 6px;
-    }
-    input[type="number"]{
-      width:100%;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.22);
-      color: var(--text);
-      outline:none;
-    }
-    input[type="number"]:focus{
-      border-color: rgba(42,92,255,.7);
-      box-shadow: 0 0 0 3px rgba(42,92,255,.18);
-    }
-    .row{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      margin-top:10px;
-      flex-wrap:wrap;
-    }
-    .check{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      user-select:none;
-      font-size:13px;
-      color: var(--text);
-      margin-top:10px;
-    }
-    .check input{ transform: translateY(1px); }
-    .btns{ display:flex; gap:10px; margin-top:14px; }
+
     button{
+      width:100%;
       border:0;
-      border-radius:12px;
-      padding:12px 14px;
-      color: white;
+      padding:14px 16px;
+      border-radius:14px;
+      font-weight:900;
+      letter-spacing:.8px;
       cursor:pointer;
-      font-weight:600;
-      letter-spacing:.2px;
+      color:white;
+      background: linear-gradient(180deg, #3a74ff, var(--btn));
+      box-shadow:
+        0 10px 25px rgba(42,92,255,.35),
+        0 0 0 1px rgba(255,255,255,.10) inset;
       transition: transform .06s ease, filter .15s ease;
     }
     button:active{ transform: translateY(1px); }
-    .primary{ background: linear-gradient(180deg, #3a74ff, var(--btn)); }
-    .secondary{ background: rgba(255,255,255,.08); color: var(--text); }
-    .ghost{ background: transparent; border:1px solid rgba(255,255,255,.16); }
-    .hint{
-      margin-top:10px;
-      font-size:12px;
-      color: var(--muted);
-    }
+    button:hover{ filter: brightness(1.06); }
 
-    /* painel de resultados */
-    .results{
-      min-height: 420px;
-      display:flex;
-      flex-direction:column;
-    }
-    .toolbar{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      padding:14px 18px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.12);
-      flex-wrap:wrap;
-    }
-    .toolbar .left{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    .badge{
+    .mini{
+      margin-top:12px;
       font-size:12px;
-      color: var(--muted);
-      padding:6px 10px;
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:999px;
-      background: rgba(0,0,0,.18);
+      opacity:.75;
     }
-    .copy-ok{
-      color: var(--ok);
-      font-size:12px;
-      display:none;
-    }
-    .grid{
-      padding:16px 18px 18px;
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap:10px;
-    }
-    @media (max-width: 860px){
-      .grid{ grid-template-columns: repeat(4, 1fr); }
-    }
-    @media (max-width: 520px){
-      .grid{ grid-template-columns: repeat(3, 1fr); }
-    }
-    .pill{
-      text-align:center;
-      padding:12px 10px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.22);
-      font-variant-numeric: tabular-nums;
-      font-weight:800;
-      letter-spacing:.8px;
-      cursor:pointer;
-      position:relative;
-    }
-    .pill:hover{ filter: brightness(1.08); }
-    .pill small{
-      display:block;
-      font-weight:600;
-      color: var(--muted);
-      letter-spacing:.2px;
-      margin-top:4px;
-      font-size:11px;
-    }
-    .empty{
-      padding:24px 18px;
-      color: var(--muted);
-      font-size:14px;
-      line-height:1.4;
-    }
-    .footer{
-      padding:12px 18px 16px;
-      border-top:1px solid rgba(255,255,255,.08);
-      color: var(--muted);
-      font-size:12px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    a{ color:#9fb7ff; text-decoration:none; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- CONTROLES -->
-    <section class="card">
-      <div class="head">
-        <h1 class="title">Gerador de Palpite de Milhar</h1>
-        <p class="sub">Gera números de <b>0000</b> a <b>9999</b>. Clique num número para copiar individualmente.</p>
-      </div>
-      <div class="body">
-        <label for="qtd">Quantidade de palpites</label>
-        <input id="qtd" type="number" min="1" max="10000" value="12" />
+  <div class="card">
+    <h1>Gerador de Palpite de Milhar</h1>
 
-        <div class="check">
-          <input id="unique" type="checkbox" checked />
-          <label for="unique" style="margin:0; color:var(--text); font-size:13px;">Não repetir número (únicos)</label>
-        </div>
+    <div id="painel" class="painel">0000</div>
 
-        <label for="seed" style="margin-top:14px;">“Semente” (opcional)</label>
-        <input id="seed" type="number" placeholder="Ex: 20260301 (se quiser resultados repetíveis)" />
+    <button id="btn">GERAR</button>
 
-        <div class="btns">
-          <button class="primary" id="btnGerar">Gerar</button>
-          <button class="secondary" id="btnLimpar">Limpar</button>
-        </div>
-
-        <p class="hint">
-          Dica: marque “únicos” para evitar repetição. Se colocar uma <b>semente</b>, o resultado fica “fixo” para a mesma semente.
-        </p>
-      </div>
-    </section>
-
-    <!-- RESULTADOS -->
-    <section class="card results">
-      <div class="toolbar">
-        <div class="left">
-          <span class="badge" id="info">Sem resultados ainda</span>
-          <span class="copy-ok" id="copyOk">Copiado ✅</span>
-        </div>
-        <div class="right">
-          <button class="ghost" id="btnCopiarTudo">Copiar tudo</button>
-        </div>
-      </div>
-
-      <div id="content">
-        <div class="empty">
-          Clique em <b>Gerar</b> para criar seus palpites de milhar.<br/>
-          Você pode copiar tudo ou clicar em um número para copiar só ele.
-        </div>
-      </div>
-
-      <div class="footer">
-        <span>Formato: <b>4 dígitos</b> (ex: 0047)</span>
-        <span>Feito em HTML/CSS/JS</span>
-      </div>
-    </section>
+    <div class="mini">Clique em GERAR para sortear de 0000 a 9999</div>
   </div>
 
   <script>
-    // PRNG simples para "semente" (Mulberry32)
-    function mulberry32(a){
-      return function(){
-        let t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      }
-    }
+    const painel = document.getElementById("painel");
+    const btn = document.getElementById("btn");
 
-    const qtdEl = document.getElementById("qtd");
-    const uniqueEl = document.getElementById("unique");
-    const seedEl = document.getElementById("seed");
-    const btnGerar = document.getElementById("btnGerar");
-    const btnLimpar = document.getElementById("btnLimpar");
-    const btnCopiarTudo = document.getElementById("btnCopiarTudo");
-    const info = document.getElementById("info");
-    const copyOk = document.getElementById("copyOk");
-    const content = document.getElementById("content");
+    function pad4(n){ return String(n).padStart(4, "0"); }
 
-    let ultimos = [];
+    btn.addEventListener("click", () => {
+      const n = Math.floor(Math.random() * 10000);
+      painel.textContent = pad4(n);
 
-    function pad4(n){
-      return String(n).padStart(4, "0");
-    }
-
-    function gerar(qtd, unicos, seed){
-      // escolhe fonte de aleatoriedade
-      let rand = Math.random;
-      if (seed !== "" && !Number.isNaN(Number(seed))){
-        rand = mulberry32(Number(seed) >>> 0);
-      }
-
-      if (unicos){
-        if (qtd > 10000) qtd = 10000;
-        // para únicos com seed, criamos um "shuffle" de 0..9999
-        const arr = Array.from({length:10000}, (_,i)=>i);
-        // Fisher-Yates com nosso rand
-        for (let i = arr.length - 1; i > 0; i--){
-          const j = Math.floor(rand() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr.slice(0, qtd).map(pad4);
-      } else {
-        const out = [];
-        for (let i=0; i<qtd; i++){
-          out.push(pad4(Math.floor(rand()*10000)));
-        }
-        return out;
-      }
-    }
-
-    function render(lista){
-      ultimos = lista.slice();
-
-      info.textContent = `${lista.length} palpite(s) gerado(s)`;
-      copyOk.style.display = "none";
-
-      if (lista.length === 0){
-        content.innerHTML = `<div class="empty">Sem resultados.</div>`;
-        return;
-      }
-
-      const grid = document.createElement("div");
-      grid.className = "grid";
-
-      lista.forEach((num, idx) => {
-        const pill = document.createElement("div");
-        pill.className = "pill";
-        pill.innerHTML = `${num}<small>clique p/ copiar</small>`;
-        pill.addEventListener("click", async () => {
-          await navigator.clipboard.writeText(num);
-          flashCopy();
-        });
-        grid.appendChild(pill);
-      });
-
-      content.innerHTML = "";
-      content.appendChild(grid);
-    }
-
-    function flashCopy(){
-      copyOk.style.display = "inline";
-      clearTimeout(flashCopy._t);
-      flashCopy._t = setTimeout(()=> copyOk.style.display="none", 900);
-    }
-
-    btnGerar.addEventListener("click", () => {
-      let qtd = Number(qtdEl.value);
-      if (!qtd || qtd < 1) qtd = 1;
-      if (qtd > 10000) qtd = 10000;
-
-      const unicos = uniqueEl.checked;
-      const seed = seedEl.value.trim();
-
-      const lista = gerar(qtd, unicos, seed);
-      render(lista);
-    });
-
-    btnLimpar.addEventListener("click", () => {
-      ultimos = [];
-      info.textContent = "Sem resultados ainda";
-      copyOk.style.display = "none";
-      content.innerHTML = `<div class="empty">
-        Clique em <b>Gerar</b> para criar seus palpites de milhar.<br/>
-        Você pode copiar tudo ou clicar em um número para copiar só ele.
-      </div>`;
-    });
-
-    btnCopiarTudo.addEventListener("click", async () => {
-      if (!ultimos.length) return;
-      const texto = ultimos.join(" ");
-      await navigator.clipboard.writeText(texto);
-      flashCopy();
+      // reinicia a animação do brilho
+      painel.classList.remove("anim");
+      void painel.offsetWidth; // força reflow
+      painel.classList.add("anim");
     });
   </script>
 </body>
