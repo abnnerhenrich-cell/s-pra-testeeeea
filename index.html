@@ -1,246 +1,932 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PALPITEIRO KELLY MENEZES</title>
-
-<style>
-:root{
-  --bg:#070b14;
-  --card:#0d1630;
-  --btn:#2a5cff;
-  --muted: rgba(255,255,255,.75);
-}
-
-*{box-sizing:border-box;}
-
-body{
-  margin:0;
-  min-height:100vh;
-  display:grid;
-  place-items:center;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background:
-    radial-gradient(900px 600px at 20% 10%, #173166 0%, transparent 55%),
-    radial-gradient(900px 600px at 90% 20%, #1d3fa0 0%, transparent 55%),
-    linear-gradient(180deg, var(--bg), #050810);
-  color:white;
-  padding:20px;
-}
-
-.card{
-  width:min(520px, 100%);
-  background:rgba(13,22,48,.82);
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:20px;
-  padding:24px;
-  text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);
-}
-
-h1{
-  font-size:18px;
-  margin:0 0 14px;
-  letter-spacing:.2px;
-}
-
-.painel{
-  display:grid;
-  gap:12px;
-  margin:16px 0 18px;
-}
-
-.numero{
-  font-size:42px;
-  font-weight:900;
-  letter-spacing:6px;
-  padding:14px 16px;
-  border-radius:16px;
-  background:rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.10);
-  font-variant-numeric: tabular-nums;
-  user-select:none;
-
-  /* neon azul */
-  text-shadow:
-    0 0 8px rgba(106,168,255,.92),
-    0 0 18px rgba(106,168,255,.60),
-    0 0 38px rgba(106,168,255,.35);
-
-  position:relative;
-  overflow:hidden;
-}
-
-/* “reluzente” passando */
-.numero::before{
-  content:"";
-  position:absolute;
-  top:-40%;
-  left:-70%;
-  width:55%;
-  height:180%;
-  background: linear-gradient(120deg,
-    transparent 0%,
-    rgba(255,255,255,.10) 35%,
-    rgba(255,255,255,.38) 50%,
-    rgba(255,255,255,.10) 65%,
-    transparent 100%);
-  transform: rotate(15deg);
-  opacity:0;
-}
-
-.numero.anim::before{
-  opacity:1;
-  animation: shine .8s ease-out forwards;
-}
-
-@keyframes shine{
-  from{ left:-70%; }
-  to{ left:135%; }
-}
-
-.btns{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
-}
-
-button{
-  padding:14px 14px;
-  border:none;
-  border-radius:14px;
-  font-weight:900;
-  letter-spacing:.8px;
-  cursor:pointer;
-  color:white;
-  font-size:14px;
-  transition: transform .06s ease, filter .15s ease;
-}
-button:active{ transform: translateY(1px); }
-button:hover{ filter: brightness(1.06); }
-
-.primary{
-  background:linear-gradient(180deg,#3a74ff,var(--btn));
-  box-shadow:0 10px 25px rgba(42,92,255,.35);
-}
-
-.secondary{
-  background: rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.12);
-}
-
-.status{
-  margin-top:12px;
-  font-size:12px;
-  color: var(--muted);
-  min-height: 18px;
-}
-</style>
-</head>
-
-<body>
-<div class="card">
-  <h1>PALPITEIRO KELLY MENEZES</h1>
-
-  <div class="painel" id="painel">
-    <div class="numero">0000</div>
-    <div class="numero">0000</div>
-    <div class="numero">0000</div>
-    <div class="numero">0000</div>
-    <div class="numero">0000</div>
-  </div>
-
-  <div class="btns">
-    <button class="primary" id="btnGerar">GERAR</button>
-    <button class="secondary" id="btnCopiar">COPIAR TODOS</button>
-  </div>
-
-  <div class="status" id="status">Sem resultados ainda.</div>
-</div>
-
-<script>
-  const numerosEls = Array.from(document.querySelectorAll(".numero"));
-  const btnGerar = document.getElementById("btnGerar");
-  const btnCopiar = document.getElementById("btnCopiar");
-  const statusEl = document.getElementById("status");
-
-  // ========= SOM (WebAudio) =========
-  let audioCtx;
-  function beep(freq = 880, duration = 0.07, type = "sine", gainValue = 0.06){
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // garante que o áudio inicie após interação do usuário
-    if (audioCtx.state === "suspended") audioCtx.resume();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    osc.type = type;
-    osc.frequency.value = freq;
-
-    gain.gain.value = 0;
-    gain.gain.linearRampToValueAtTime(gainValue, audioCtx.currentTime + 0.01);
-    gain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration + 0.02);
-  }
-
-  function somGerar(){
-    // uma mini “sequência” gostosa
-    beep(740, 0.06, "triangle", 0.05);
-    setTimeout(() => beep(990, 0.06, "triangle", 0.05), 70);
-    setTimeout(() => beep(1320, 0.07, "triangle", 0.05), 140);
-  }
-
-  // ========= UTIL =========
-  function pad4(n){ return String(n).padStart(4,"0"); }
-
-  function gerar5Unicos(){
-    const set = new Set();
-    while (set.size < 5){
-      set.add(Math.floor(Math.random() * 10000));
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador de Milhares - Kelly Menezes</title>
+  <style>
+    :root {
+      --bg: #030b1c;
+      --bg-2: #05142d;
+      --card: rgba(8, 20, 46, 0.78);
+      --card-strong: rgba(10, 26, 58, 0.92);
+      --blue: #56c8ff;
+      --blue-2: #2ea7ff;
+      --blue-3: #1388ff;
+      --blue-soft: rgba(86, 200, 255, 0.14);
+      --cyan: #90efff;
+      --white: #ffffff;
+      --text: #eaf8ff;
+      --text-soft: rgba(234, 248, 255, 0.76);
+      --border: rgba(86, 200, 255, 0.35);
+      --border-strong: rgba(86, 200, 255, 0.62);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      --glow: 0 0 16px rgba(86, 200, 255, 0.28), 0 0 34px rgba(46, 167, 255, 0.18);
+      --radius: 24px;
+      --radius-xl: 34px;
+      --radius-pill: 999px;
+      --font-title: "Orbitron", "Segoe UI", Arial, sans-serif;
+      --font-body: Inter, "Segoe UI", Arial, sans-serif;
+      --transition: 220ms cubic-bezier(.2, .8, .2, 1);
     }
-    return Array.from(set).map(pad4);
-  }
 
-  function animar(el){
-    el.classList.remove("anim");
-    void el.offsetWidth; // reflow
-    el.classList.add("anim");
-  }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  function pegarListaAtual(){
-    return numerosEls.map(el => el.textContent.trim());
-  }
+    html { scroll-behavior: smooth; }
 
-  // ========= AÇÕES =========
-  btnGerar.addEventListener("click", () => {
-    const lista = gerar5Unicos();
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(45, 162, 255, 0.16), transparent 30%),
+        radial-gradient(circle at bottom, rgba(52, 210, 255, 0.10), transparent 30%),
+        linear-gradient(180deg, #020814 0%, #020d1f 36%, #041428 100%);
+      overflow-x: hidden;
+      position: relative;
+    }
 
-    lista.forEach((num, i) => {
-      numerosEls[i].textContent = num;
-      animar(numerosEls[i]);
+    #particle-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.95;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 100vh;
+      padding: clamp(18px, 4vw, 30px) 14px 28px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .shell {
+      width: min(100%, 960px);
+      min-height: calc(100vh - 36px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: clamp(22px, 4vw, 36px);
+    }
+
+    .brand-name {
+      font-family: var(--font-title);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      text-shadow: 0 0 16px rgba(86, 200, 255, 0.35), 0 0 36px rgba(19, 136, 255, 0.15);
+      font-size: clamp(1.25rem, 4vw, 2rem);
+    }
+
+    .brand-badge {
+      border: 1px solid var(--border);
+      background: rgba(86, 200, 255, 0.08);
+      color: var(--text-soft);
+      padding: 10px 14px;
+      border-radius: var(--radius-pill);
+      backdrop-filter: blur(10px);
+      font-size: 0.86rem;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+      min-height: 40px;
+      min-width: 120px;
+    }
+
+    .view {
+      display: none;
+      flex: 1;
+      animation: fadeUp .35s ease;
+    }
+
+    .view.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      min-height: calc(100vh - 175px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 20px;
+      padding-bottom: 20px;
+    }
+
+    .title {
+      font-family: var(--font-title);
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: var(--cyan);
+      text-shadow: 0 0 16px rgba(86, 200, 255, 0.32), 0 0 30px rgba(19, 136, 255, 0.15);
+      line-height: 1.04;
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 7vw, 4.8rem);
+      max-width: 10ch;
+    }
+
+    .section-title {
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .subtitle {
+      color: var(--text-soft);
+      max-width: 650px;
+      line-height: 1.55;
+      font-size: clamp(1rem, 2.8vw, 1.12rem);
+      text-align: center;
+    }
+
+    .btn {
+      border: none;
+      outline: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform var(--transition), box-shadow var(--transition), filter var(--transition), background var(--transition), border-color var(--transition), opacity var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.28) 48%, transparent 72%);
+      transform: translateX(-130%);
+      transition: transform .75s ease;
+    }
+
+    .btn:hover::before { transform: translateX(130%); }
+    .btn:hover { transform: translateY(-3px) scale(1.01); }
+    .btn:active { transform: translateY(0) scale(.99); }
+    .btn:focus-visible,
+    .animal-card:focus-visible,
+    .qty-btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(86, 200, 255, 0.2), 0 0 0 6px rgba(86, 200, 255, 0.08);
+    }
+
+    .btn-primary,
+    .qty-btn {
+      background: linear-gradient(180deg, #9beaff 0%, #47c3ff 38%, #1d98ff 100%);
+      color: #04111f;
+      border: 2px solid rgba(180, 243, 255, 0.9);
+      box-shadow: 0 12px 28px rgba(29, 152, 255, 0.24), inset 0 1px 0 rgba(255,255,255,.35), 0 0 18px rgba(86, 200, 255, 0.18);
+      font-weight: 900;
+    }
+
+    .btn-start {
+      min-width: min(100%, 540px);
+      padding: 22px 28px;
+      border-radius: var(--radius-pill);
+      font-size: clamp(1.2rem, 4vw, 1.9rem);
+      animation: breathing 2.7s ease-in-out infinite;
+    }
+
+    @keyframes breathing {
+      0%, 100% { box-shadow: 0 12px 28px rgba(29, 152, 255, 0.24), inset 0 1px 0 rgba(255,255,255,.35), 0 0 18px rgba(86, 200, 255, 0.18); }
+      50% { box-shadow: 0 14px 32px rgba(29, 152, 255, 0.34), inset 0 1px 0 rgba(255,255,255,.35), 0 0 28px rgba(86, 200, 255, 0.28); }
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .animal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .animal-card {
+      background: linear-gradient(180deg, rgba(9, 22, 50, 0.92), rgba(5, 14, 34, 0.98));
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      min-height: 174px;
+      padding: 16px 10px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      cursor: pointer;
+      position: relative;
+      color: var(--white);
+      box-shadow: var(--shadow);
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+    }
+
+    .animal-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 12% 0 12%;
+      height: 70px;
+      background: radial-gradient(circle at center, rgba(86, 200, 255, 0.22), transparent 72%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .animal-card:hover,
+    .animal-card.selected {
+      transform: translateY(-4px) scale(1.01);
+      border-color: var(--border-strong);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34), 0 0 18px rgba(86, 200, 255, 0.18);
+    }
+
+    .animal-card:hover::after,
+    .animal-card.selected::after {
+      opacity: 1;
+    }
+
+    .animal-icon { font-size: clamp(2.4rem, 5vw, 3rem); line-height: 1; }
+    .animal-index { color: rgba(234, 248, 255, 0.6); font-size: .9rem; font-weight: 700; }
+    .animal-name { font-size: clamp(.96rem, 2vw, 1.08rem); font-weight: 800; }
+    .animal-dezenas { font-size: .8rem; color: rgba(234, 248, 255, 0.66); }
+
+    .selection-header,
+    .results-view {
+      min-height: calc(100vh - 210px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .selection-header {
+      align-items: center;
+      text-align: center;
+    }
+
+    .selected-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px 18px;
+      border-radius: var(--radius-pill);
+      background: rgba(86, 200, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+      max-width: 720px;
+    }
+
+    .qty-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(90px, 1fr));
+      gap: 18px;
+      width: min(100%, 560px);
+    }
+
+    .qty-btn {
+      min-height: 102px;
+      border-radius: var(--radius-pill);
+      font-size: clamp(2rem, 6vw, 2.6rem);
+      animation: floatButton 3.5s ease-in-out infinite;
+    }
+
+    .qty-btn:nth-child(2) { animation-delay: .25s; }
+    .qty-btn:nth-child(3) { animation-delay: .5s; }
+
+    @keyframes floatButton {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .btn-secondary,
+    .btn-back {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(242,248,255,0.98) 100%);
+      color: #08111e;
+      border: 2px solid rgba(120, 220, 255, 0.72);
+      box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.22),
+        0 0 0 1px rgba(255,255,255,0.35) inset,
+        0 0 20px rgba(86, 200, 255, 0.16);
+      font-weight: 900;
+      border-radius: 30px;
+      padding: 18px 26px;
+      align-self: center;
+      width: 100%;
+      min-height: 78px;
+      max-width: 520px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: clamp(1.1rem, 3.5vw, 1.35rem);
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+
+    .btn-secondary::after,
+    .btn-back::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(86,200,255,0.15), rgba(255,255,255,0.42));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    .btn-secondary:hover,
+    .btn-back:hover {
+      box-shadow:
+        0 18px 36px rgba(0, 0, 0, 0.26),
+        0 0 0 1px rgba(255,255,255,0.45) inset,
+        0 0 28px rgba(86, 200, 255, 0.22);
+    }
+
+    .results-box {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .milhar-card {
+      background: linear-gradient(180deg, rgba(10, 24, 52, 0.96), rgba(4, 11, 29, 1));
+      border: 1.5px solid var(--border-strong);
+      border-radius: 20px;
+      min-height: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 18px rgba(86, 200, 255, 0.12);
+      animation: cardPulse 4s ease-in-out infinite;
+    }
+
+    .milhar-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 24%, rgba(255,255,255,0.2) 42%, rgba(255,255,255,0.04) 52%, transparent 68%);
+      transform: translateX(-75%);
+      animation: shine 4.8s infinite ease-in-out;
+    }
+
+    @keyframes shine {
+      0%, 100% { transform: translateX(-75%); }
+      50% { transform: translateX(85%); }
+    }
+
+    @keyframes cardPulse {
+      0%, 100% { box-shadow: 0 0 18px rgba(86, 200, 255, 0.12); }
+      50% { box-shadow: 0 0 24px rgba(86, 200, 255, 0.2); }
+    }
+
+    .milhar-number {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-title);
+      font-size: clamp(1.75rem, 5vw, 2.35rem);
+      font-weight: 900;
+      letter-spacing: .05em;
+      color: var(--text);
+      text-shadow: 0 0 12px rgba(86, 200, 255, 0.18);
+    }
+
+    .muted {
+      color: var(--text-soft);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .action-stack {
+      width: min(100%, 640px);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin: 0 auto;
+      padding-top: 4px;
+    }
+
+    .history-box {
+      background: linear-gradient(180deg, rgba(10, 25, 56, 0.85), rgba(5, 13, 31, 0.92));
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .history-title {
+      font-family: var(--font-title);
+      font-size: 1rem;
+      color: var(--cyan);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      border: 1px solid rgba(86, 200, 255, 0.18);
+      background: rgba(86, 200, 255, 0.05);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 6px;
+      color: var(--white);
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-wrap: wrap;
+    }
+
+    .history-numbers {
+      color: var(--text-soft);
+      line-height: 1.5;
+      font-size: 0.92rem;
+      word-break: break-word;
+    }
+
+    .empty-note {
+      border: 1px dashed var(--border);
+      background: rgba(86, 200, 255, 0.04);
+      color: var(--text-soft);
+      border-radius: 18px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .footer-note {
+      margin-top: auto;
+      padding-top: 20px;
+      color: rgba(234, 248, 255, 0.48);
+      text-align: center;
+      font-size: 0.82rem;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(10px);
+      min-width: min(92vw, 360px);
+      padding: 14px 18px;
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,.98);
+      color: #09111d;
+      border: 2px solid rgba(86, 200, 255, 0.7);
+      font-weight: 800;
+      box-shadow: 0 18px 32px rgba(0, 0, 0, 0.26);
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition), transform var(--transition);
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 760px) {
+      .brand-badge { display: none; }
+      .hero { min-height: calc(100vh - 145px); }
+      .results-box { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 540px) {
+      .animal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .animal-card { min-height: 150px; padding: 14px 8px; }
+      .animal-icon { font-size: 2.2rem; }
+      .animal-dezenas { display: none; }
+      .qty-options { gap: 14px; }
+      .qty-btn { min-height: 92px; }
+      .section-title { font-size: 1.8rem; }
+      .btn-secondary,
+      .btn-back {
+        min-height: 72px;
+        border-radius: 26px;
+        font-size: 1rem;
+        padding: 16px 20px;
+      }
+      .action-stack {
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .animal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .results-box { grid-template-columns: 1fr; }
+      .qty-options { grid-template-columns: 1fr; width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particle-canvas"></canvas>
+
+  <main class="app">
+    <div class="shell">
+      <header class="brand">
+        <div class="brand-name">KELLY MENEZES</div>
+        <div class="brand-badge"></div>
+      </header>
+
+      <section id="view-home" class="view active">
+        <div class="hero">
+          <h1 class="title hero-title">GERADOR DE MILHAR</h1>
+          <p class="subtitle">.</p>
+          <button class="btn btn-primary btn-start" id="btn-start">Quero começar</button>
+        </div>
+      </section>
+
+      <section id="view-animal" class="view">
+        <div class="stack">
+          <h2 class="title section-title">Escolha seu bicho da sorte 🍀</h2>
+          <div class="animal-grid" id="animal-grid"></div>
+          <button class="btn btn-back" id="back-home">← Voltar</button>
+        </div>
+      </section>
+
+      <section id="view-qty" class="view">
+        <div class="selection-header">
+          <h2 class="title section-title">Quantos palpites você quer gerar? 🍀</h2>
+          <div class="selected-chip" id="selected-animal-chip">Nenhum bicho selecionado</div>
+          <div class="qty-options">
+            <button class="btn qty-btn" data-qty="4">4</button>
+            <button class="btn qty-btn" data-qty="6">6</button>
+            <button class="btn qty-btn" data-qty="8">8</button>
+          </div>
+          <button class="btn btn-back" id="back-animal">← Voltar</button>
+        </div>
+      </section>
+
+      <section id="view-results" class="view">
+        <div class="results-view">
+          <div class="stack">
+            <h2 class="title section-title">Seus palpites da sorte ✨</h2>
+            <p class="muted" id="result-animal-info">Seus números aparecerão aqui.</p>
+            <div class="results-box" id="results-list"></div>
+
+            <div class="action-stack">
+              <button class="btn btn-secondary" id="btn-copy"><span>📋</span><span>Copiar Palpites</span></button>
+              <button class="btn btn-secondary" id="btn-regenerate"><span>↺</span><span>Gerar Novamente</span></button>
+              <button class="btn btn-back" id="btn-change-animal"><span>←</span><span>Escolher outro bicho</span></button>
+            </div>
+
+            <div class="history-box">
+              <div class="history-title">Últimos palpites</div>
+              <div class="history-list" id="history-list"></div>
+            </div>
+          </div>
+          <p class="footer-note">© 2026·Kelly Menezes</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="toast" id="toast">Palpites copiados com sucesso.</div>
+
+  <script>
+    const animais = [
+      { id: 1, nome: "Avestruz", icon: "🪶", dezenas: ["01", "02", "03", "04"] },
+      { id: 2, nome: "Águia", icon: "🦅", dezenas: ["05", "06", "07", "08"] },
+      { id: 3, nome: "Burro", icon: "🐴", dezenas: ["09", "10", "11", "12"] },
+      { id: 4, nome: "Borboleta", icon: "🦋", dezenas: ["13", "14", "15", "16"] },
+      { id: 5, nome: "Cachorro", icon: "🐶", dezenas: ["17", "18", "19", "20"] },
+      { id: 6, nome: "Cabra", icon: "🐐", dezenas: ["21", "22", "23", "24"] },
+      { id: 7, nome: "Carneiro", icon: "🐏", dezenas: ["25", "26", "27", "28"] },
+      { id: 8, nome: "Camelo", icon: "🐫", dezenas: ["29", "30", "31", "32"] },
+      { id: 9, nome: "Cobra", icon: "🐍", dezenas: ["33", "34", "35", "36"] },
+      { id: 10, nome: "Coelho", icon: "🐇", dezenas: ["37", "38", "39", "40"] },
+      { id: 11, nome: "Cavalo", icon: "🐎", dezenas: ["41", "42", "43", "44"] },
+      { id: 12, nome: "Elefante", icon: "🐘", dezenas: ["45", "46", "47", "48"] },
+      { id: 13, nome: "Galo", icon: "🐓", dezenas: ["49", "50", "51", "52"] },
+      { id: 14, nome: "Gato", icon: "🐈", dezenas: ["53", "54", "55", "56"] },
+      { id: 15, nome: "Jacaré", icon: "🐊", dezenas: ["57", "58", "59", "60"] },
+      { id: 16, nome: "Leão", icon: "🦁", dezenas: ["61", "62", "63", "64"] },
+      { id: 17, nome: "Macaco", icon: "🐒", dezenas: ["65", "66", "67", "68"] },
+      { id: 18, nome: "Porco", icon: "🐷", dezenas: ["69", "70", "71", "72"] },
+      { id: 19, nome: "Pavão", icon: "🦚", dezenas: ["73", "74", "75", "76"] },
+      { id: 20, nome: "Peru", icon: "🦃", dezenas: ["77", "78", "79", "80"] },
+      { id: 21, nome: "Touro", icon: "🐂", dezenas: ["81", "82", "83", "84"] },
+      { id: 22, nome: "Tigre", icon: "🐅", dezenas: ["85", "86", "87", "88"] },
+      { id: 23, nome: "Urso", icon: "🐻", dezenas: ["89", "90", "91", "92"] },
+      { id: 24, nome: "Veado", icon: "🦌", dezenas: ["93", "94", "95", "96"] },
+      { id: 25, nome: "Vaca", icon: "🐄", dezenas: ["97", "98", "99", "00"] }
+    ];
+
+    const STORAGE_KEY = 'kelly_menezes_historico_milhares';
+
+    const state = {
+      selectedAnimal: null,
+      currentQty: 4,
+      generatedMilhares: [],
+      history: []
+    };
+
+    const views = {
+      home: document.getElementById('view-home'),
+      animal: document.getElementById('view-animal'),
+      qty: document.getElementById('view-qty'),
+      results: document.getElementById('view-results')
+    };
+
+    const animalGrid = document.getElementById('animal-grid');
+    const selectedAnimalChip = document.getElementById('selected-animal-chip');
+    const resultAnimalInfo = document.getElementById('result-animal-info');
+    const resultsList = document.getElementById('results-list');
+    const historyList = document.getElementById('history-list');
+    const toast = document.getElementById('toast');
+    const btnCopy = document.getElementById('btn-copy');
+
+    function showView(viewKey) {
+      Object.values(views).forEach(view => view.classList.remove('active'));
+      views[viewKey].classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function createAnimalCard(animal) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'animal-card';
+      button.setAttribute('aria-label', `Selecionar ${animal.nome}`);
+      button.innerHTML = `
+        <div class="animal-icon">${animal.icon}</div>
+        <div class="animal-index">${animal.id}.</div>
+        <div class="animal-name">${animal.nome}</div>
+        <div class="animal-dezenas">${animal.dezenas.join(' • ')}</div>
+      `;
+      button.addEventListener('click', () => selectAnimal(animal));
+      return button;
+    }
+
+    function renderAnimals() {
+      animalGrid.innerHTML = '';
+      animais.forEach(animal => animalGrid.appendChild(createAnimalCard(animal)));
+      highlightSelectedAnimal();
+    }
+
+    function highlightSelectedAnimal() {
+      const cards = [...animalGrid.querySelectorAll('.animal-card')];
+      cards.forEach((card, index) => {
+        const active = state.selectedAnimal && animais[index].id === state.selectedAnimal.id;
+        card.classList.toggle('selected', active);
+      });
+    }
+
+    function selectAnimal(animal) {
+      state.selectedAnimal = animal;
+      selectedAnimalChip.innerHTML = `<span>${animal.icon}</span><span><strong>${animal.nome}</strong> • dezenas ${animal.dezenas.join(', ')}</span>`;
+      highlightSelectedAnimal();
+      showView('qty');
+    }
+
+    function uniqueMilhares(qty, dezenas) {
+      const set = new Set();
+      let attempts = 0;
+
+      while (set.size < qty && attempts < 800) {
+        const prefix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+        const suffix = dezenas[Math.floor(Math.random() * dezenas.length)];
+        set.add(prefix + suffix);
+        attempts += 1;
+      }
+
+      return [...set];
+    }
+
+    function generate(qty) {
+      if (!state.selectedAnimal) {
+        showToast('Escolha um bicho primeiro.');
+        showView('animal');
+        return;
+      }
+
+      state.currentQty = qty;
+      state.generatedMilhares = uniqueMilhares(qty, state.selectedAnimal.dezenas);
+      saveHistoryEntry();
+      renderResults();
+      renderHistory();
+      showView('results');
+    }
+
+    function renderResults() {
+      if (!state.generatedMilhares.length) {
+        resultsList.innerHTML = '<div class="empty-note">Nenhum palpite foi gerado ainda.</div>';
+        return;
+      }
+
+      resultAnimalInfo.textContent = `${state.selectedAnimal.icon} Bicho escolhido: ${state.selectedAnimal.nome} • ${state.currentQty} palpites gerados`;
+      resultsList.innerHTML = state.generatedMilhares.map(number => `
+        <article class="milhar-card"><span class="milhar-number">${number}</span></article>
+      `).join('');
+      btnCopy.textContent = '📋 Copiar Palpites';
+    }
+
+    function saveHistoryEntry() {
+      const entry = {
+        animal: state.selectedAnimal.nome,
+        icon: state.selectedAnimal.icon,
+        qty: state.currentQty,
+        numbers: [...state.generatedMilhares],
+        date: new Date().toLocaleString('pt-BR')
+      };
+
+      state.history.unshift(entry);
+      state.history = state.history.slice(0, 8);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history));
+    }
+
+    function loadHistory() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        state.history = Array.isArray(saved) ? saved : [];
+      } catch {
+        state.history = [];
+      }
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (!state.history.length) {
+        historyList.innerHTML = '<div class="empty-note">Seus últimos palpites vão aparecer aqui.</div>';
+        return;
+      }
+
+      historyList.innerHTML = state.history.map(item => `
+        <div class="history-item">
+          <div class="history-head">
+            <span>${item.icon} ${item.animal} • ${item.qty} palpites</span>
+            <span>${item.date}</span>
+          </div>
+          <div class="history-numbers">${item.numbers.join(' • ')}</div>
+        </div>
+      `).join('');
+    }
+
+    async function copyResults() {
+      if (!state.generatedMilhares.length || !state.selectedAnimal) {
+        showToast('Gere palpites antes de copiar.');
+        return;
+      }
+
+      const text = [`${state.selectedAnimal.icon} ${state.selectedAnimal.nome}`, ...state.generatedMilhares].join('\n');
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          textarea.remove();
+        }
+
+        btnCopy.textContent = '✅ Copiado';
+        showToast('Palpites copiados com sucesso.');
+      } catch (error) {
+        console.error(error);
+        showToast('Não foi possível copiar agora.');
+      }
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => showView('animal'));
+    document.getElementById('back-home').addEventListener('click', () => showView('home'));
+    document.getElementById('back-animal').addEventListener('click', () => showView('animal'));
+    document.getElementById('btn-regenerate').addEventListener('click', () => generate(state.currentQty));
+    document.getElementById('btn-change-animal').addEventListener('click', () => showView('animal'));
+    btnCopy.addEventListener('click', copyResults);
+
+    document.querySelectorAll('.qty-btn').forEach(button => {
+      button.addEventListener('click', () => generate(Number(button.dataset.qty)));
     });
 
-    somGerar();
-    statusEl.textContent = "Gerado!";
-  });
+    function initParticles() {
+      const canvas = document.getElementById('particle-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationId;
 
-  btnCopiar.addEventListener("click", async () => {
-    const lista = pegarListaAtual();
-    const texto = lista.join(" ");
-    try{
-      await navigator.clipboard.writeText(texto);
-      statusEl.textContent = "Copiado ✅ " + texto;
-      beep(1040, 0.06, "sine", 0.05);
-    }catch(e){
-      statusEl.textContent = "Não consegui copiar (seu navegador bloqueou). Se quiser, copie manualmente.";
+      function resize() {
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * ratio;
+        canvas.height = window.innerHeight * ratio;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        createParticles();
+      }
+
+      function createParticles() {
+        const count = Math.max(45, Math.min(110, Math.floor(window.innerWidth / 12)));
+        particles = Array.from({ length: count }, () => ({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          radius: Math.random() * 2.2 + 0.6,
+          speedY: Math.random() * 0.6 + 0.15,
+          speedX: (Math.random() - 0.5) * 0.35,
+          alpha: Math.random() * 0.7 + 0.2,
+          twinkle: Math.random() * 0.03 + 0.01
+        }));
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+        for (const p of particles) {
+          p.y -= p.speedY;
+          p.x += p.speedX;
+          p.alpha += Math.sin(Date.now() * p.twinkle) * 0.002;
+
+          if (p.y < -10) {
+            p.y = window.innerHeight + 10;
+            p.x = Math.random() * window.innerWidth;
+          }
+
+          if (p.x < -20) p.x = window.innerWidth + 10;
+          if (p.x > window.innerWidth + 20) p.x = -10;
+
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(110, 220, 255, ${Math.max(0.15, Math.min(1, p.alpha))})`;
+          ctx.shadowColor = 'rgba(86, 200, 255, 0.8)';
+          ctx.shadowBlur = 12;
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        animationId = requestAnimationFrame(draw);
+      }
+
+      resize();
+      draw();
+      window.addEventListener('resize', resize);
+      window.addEventListener('beforeunload', () => cancelAnimationFrame(animationId));
     }
-  });
-</script>
+
+    renderAnimals();
+    loadHistory();
+    initParticles();
+  </script>
 </body>
 </html>
