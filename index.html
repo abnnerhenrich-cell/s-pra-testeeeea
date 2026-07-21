@@ -256,7 +256,7 @@ document.querySelector('#copyAll').onclick=()=>copyText(resultText());
 document.querySelector('#share').onclick=async()=>{const text=resultText();if(navigator.share){try{await navigator.share({title:`Palpites de ${document.querySelector('#promoter').value.trim()||'Kelly Menezes JB'}`,text})}catch{}}else copyText(text)};
 document.querySelector('#clear').onclick=()=>{localStorage.removeItem('km_history');renderHistory();toast('Histórico limpo.')};;
 document.querySelector('#whatsapp').onclick=()=>window.open('https://chat.whatsapp.com/Kw2S3HEIpKu1aMLWoKSzzo','_blank');
-document.querySelector('#register').onclick=()=>window.open('kellymenezes.app,'_self');
+document.querySelector('#register').onclick=()=>window.open('#','_self');
 document.querySelector('#dateBox').title=new Date().toLocaleDateString('pt-BR');
 renderHistory();
 </script>
